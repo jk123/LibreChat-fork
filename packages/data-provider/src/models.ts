@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import type { TPreset } from './schemas';
+import type { TModelSpecPreset } from './schemas';
 import {
   EModelEndpoint,
-  tPresetSchema,
+  tModelSpecPresetSchema,
   eModelEndpointSchema,
   AuthType,
   authTypeSchema,
@@ -13,7 +13,7 @@ export type ModelCapabilityType = 'reasoning' | 'upload_image' | 'web_search' | 
 export type TModelSpec = {
   name: string;
   label: string;
-  preset: TPreset;
+  preset: TModelSpecPreset;
   order?: number;
   default?: boolean;
   description?: string;
@@ -63,7 +63,7 @@ export const badgesSchema = z.object({
 export const tModelSpecSchema = z.object({
   name: z.string(),
   label: z.string(),
-  preset: tPresetSchema,
+  preset: tModelSpecPresetSchema,
   order: z.number().optional(),
   default: z.boolean().optional(),
   description: z.string().optional(),
