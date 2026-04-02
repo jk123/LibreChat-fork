@@ -1,25 +1,24 @@
 import { useMemo } from 'react';
-import { Blocks, MCPIcon, AttachmentIcon } from '@librechat/client';
-import { Database, Bookmark, Settings2, ArrowRightToLine, MessageSquareQuote } from 'lucide-react';
+import { Blocks } from '@librechat/client';
+import { Database, Bookmark, ArrowRightToLine, MessageSquareQuote, Code2, Wrench, Clock } from 'lucide-react';
 import {
   Permissions,
   EModelEndpoint,
   PermissionTypes,
-  isParamEndpoint,
-  isAgentsEndpoint,
   isAssistantsEndpoint,
 } from 'librechat-data-provider';
 import type { TInterfaceConfig, TEndpointsConfig } from 'librechat-data-provider';
 import type { NavLink } from '~/common';
-import MCPBuilderPanel from '~/components/SidePanel/MCPBuilder/MCPBuilderPanel';
 import AgentPanelSwitch from '~/components/SidePanel/Agents/AgentPanelSwitch';
 import BookmarkPanel from '~/components/SidePanel/Bookmarks/BookmarkPanel';
 import PanelSwitch from '~/components/SidePanel/Builder/PanelSwitch';
-import Parameters from '~/components/SidePanel/Parameters/Panel';
-import { MemoryPanel } from '~/components/SidePanel/Memories';
-import FilesPanel from '~/components/SidePanel/Files/Panel';
-import { useHasAccess, useMCPServerManager } from '~/hooks';
 import { PromptsAccordion } from '~/components/Prompts';
+import { MemoryPanel } from '~/components/SidePanel/Memories';
+import { useHasAccess } from '~/hooks';
+import SkillsAccordion from '~/components/SidePanel/Skills';
+import ToolsPanel from '~/components/SidePanel/Tools';
+import SueloMemoryPanel from '~/components/SidePanel/SueloMemory';
+import CronJobsAccordion from '~/components/SidePanel/CronJobs';
 
 export default function useSideNavLinks({
   hidePanel,
@@ -28,15 +27,13 @@ export default function useSideNavLinks({
   endpointType,
   interfaceConfig,
   endpointsConfig,
-  includeHidePanel = true,
 }: {
-  hidePanel?: () => void;
+  hidePanel: () => void;
   keyProvided: boolean;
   endpoint?: EModelEndpoint | null;
   endpointType?: EModelEndpoint | null;
   interfaceConfig: Partial<TInterfaceConfig>;
   endpointsConfig: TEndpointsConfig;
-  includeHidePanel?: boolean;
 }) {
   const hasAccessToPrompts = useHasAccess({
     permissionType: PermissionTypes.PROMPTS,
@@ -62,18 +59,11 @@ export default function useSideNavLinks({
     permissionType: PermissionTypes.AGENTS,
     permission: Permissions.CREATE,
   });
-  const hasAccessToUseMCPSettings = useHasAccess({
-    permissionType: PermissionTypes.MCP_SERVERS,
-    permission: Permissions.USE,
-  });
-  const hasAccessToCreateMCP = useHasAccess({
-    permissionType: PermissionTypes.MCP_SERVERS,
-    permission: Permissions.CREATE,
-  });
-  const { availableMCPServers } = useMCPServerManager();
 
   const Links = useMemo(() => {
     const links: NavLink[] = [];
+
+    // Assistant Builder (only shows for assistants endpoint)
     if (
       isAssistantsEndpoint(endpoint) &&
       ((endpoint === EModelEndpoint.assistants &&
@@ -93,20 +83,13 @@ export default function useSideNavLinks({
       });
     }
 
-    if (
-      endpointsConfig?.[EModelEndpoint.agents] &&
-      hasAccessToAgents &&
-      hasAccessToCreateAgents &&
-      endpointsConfig[EModelEndpoint.agents].disableBuilder !== true
-    ) {
-      links.push({
-        title: 'com_sidepanel_agent_builder',
-        label: '',
-        icon: Blocks,
-        id: EModelEndpoint.agents,
-        Component: AgentPanelSwitch,
-      });
-    }
+    links.push({
+      title: 'Skills',
+      label: '',
+      icon: Code2,
+      id: 'skills',
+      Component: SkillsAccordion,
+    });
 
     if (hasAccessToPrompts) {
       links.push({
@@ -128,27 +111,20 @@ export default function useSideNavLinks({
       });
     }
 
-    if (
-      interfaceConfig.parameters === true &&
-      isParamEndpoint(endpoint ?? '', endpointType ?? '') === true &&
-      !isAgentsEndpoint(endpoint) &&
-      keyProvided
-    ) {
-      links.push({
-        title: 'com_sidepanel_parameters',
-        label: '',
-        icon: Settings2,
-        id: 'parameters',
-        Component: Parameters,
-      });
-    }
+    links.push({
+      title: 'Tools',
+      label: '',
+      icon: Wrench,
+      id: 'tools',
+      Component: ToolsPanel,
+    });
 
     links.push({
-      title: 'com_sidepanel_attach_files',
+      title: 'Suelo Memory',
       label: '',
-      icon: AttachmentIcon,
-      id: 'files',
-      Component: FilesPanel,
+      icon: Database,
+      id: 'suelo-memory',
+      Component: SueloMemoryPanel,
     });
 
     if (hasAccessToBookmarks) {
@@ -161,28 +137,37 @@ export default function useSideNavLinks({
       });
     }
 
+    // Agent Builder — moved down, above Cron Jobs
     if (
-      (hasAccessToUseMCPSettings && availableMCPServers && availableMCPServers.length > 0) ||
-      hasAccessToCreateMCP
+      endpointsConfig?.[EModelEndpoint.agents] &&
+      hasAccessToAgents &&
+      hasAccessToCreateAgents &&
+      endpointsConfig[EModelEndpoint.agents].disableBuilder !== true
     ) {
       links.push({
-        title: 'com_nav_setting_mcp',
+        title: 'com_sidepanel_agent_builder',
         label: '',
-        icon: MCPIcon,
-        id: 'mcp-builder',
-        Component: MCPBuilderPanel,
+        icon: Blocks,
+        id: EModelEndpoint.agents,
+        Component: AgentPanelSwitch,
       });
     }
 
-    if (includeHidePanel && hidePanel) {
-      links.push({
-        title: 'com_sidepanel_hide_panel',
-        label: '',
-        icon: ArrowRightToLine,
-        onClick: hidePanel,
-        id: 'hide-panel',
-      });
-    }
+    links.push({
+      title: 'Cron Jobs',
+      label: '',
+      icon: Clock,
+      id: 'cron-jobs',
+      Component: CronJobsAccordion,
+    });
+
+    links.push({
+      title: 'com_sidepanel_hide_panel',
+      label: '',
+      icon: ArrowRightToLine,
+      onClick: hidePanel,
+      id: 'hide-panel',
+    });
 
     return links;
   }, [
@@ -194,13 +179,7 @@ export default function useSideNavLinks({
     hasAccessToPrompts,
     hasAccessToMemories,
     hasAccessToReadMemories,
-    interfaceConfig.parameters,
-    endpointType,
     hasAccessToBookmarks,
-    availableMCPServers,
-    hasAccessToUseMCPSettings,
-    hasAccessToCreateMCP,
-    includeHidePanel,
     hidePanel,
   ]);
 
