@@ -112,6 +112,7 @@
     "tailwindcss-radix": "^2.8.0",
     "typescript": "^5.0.0",
     "remove-accents": "^0.5.0",
-    "@tanstack/virtual-core": "^3.13.13"
+    "@tanstack/virtual-core": "^3.13.13",
+    "@tanstack/match-sorter-utils": "^8.11.8"
   }
 }
